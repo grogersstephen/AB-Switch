@@ -62,45 +62,17 @@ class AppScaffold extends HookWidget {
         floatingActionButton: null,
         resizeToAvoidBottomInset: true,
         appBar: AppBar(
-          title: const Text("OBS Switch"),
+          title: const Text("A/B Switch"),
           actions: [
             IconButton(
-              //Icons. link sync devices public wifi
               icon: const Icon(Icons.link),
               onPressed: () async {
-                try {
-                  final cred = await showDialog<WSCredential>(
-                    context: context,
-                    builder: (context) => const ConnectionDialog(),
-                  );
-                  if (cred == null) {
-                    return;
-                  }
-
-                  // Construct the url
-                  final url = "ws://${cred.host}:${cred.port}";
-
-                  // Update the web socket notifier
-                  obsWebSocketNotifier.value = await ObsWebSocket.connect(
-                    url,
-                    password: cred.password,
-                  );
-
-                  // Get the version
-                  final version =
-                      (await obsWebSocketNotifier.value?.general.version);
-
-                  // SUCCESSFUL CONNECTION
-                  prefs.data?.addCredential(cred);
-                  final msg =
-                      "Successfully connected to OBS ${version?.obsVersion}";
-                  // snack(SnackbarMessage(msg));
-                } catch (e) {
-                  final msg = "obs web socket connection failed: $e";
-                  // snack(SnackbarMessage(msg, backgroundColor: Colors.red));
-                  print(msg);
-                  obsWebSocketNotifier.value = null;
-                }
+                final socketFuture = await showDialog<Future<ObsWebSocket?>>(
+                  context: context,
+                  builder: (context) => const SelectEndpointDialog(),
+                );
+                final socket = await socketFuture;
+                obsWebSocketNotifier.value = socket;
               },
             ),
           ],

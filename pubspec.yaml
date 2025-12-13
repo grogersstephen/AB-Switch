@@ -38,6 +38,7 @@ dependencies:
   flutter_hooks: ^0.21.2
   obs_websocket: ^5.2.3
   shared_preferences: ^2.5.3
+  streaming_shared_preferences: ^2.0.0
 
 dev_dependencies:
   flutter_test:

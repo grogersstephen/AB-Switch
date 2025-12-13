@@ -2,16 +2,7 @@ import 'dart:convert';
 import 'package:flutter/widgets.dart';
 
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-AsyncSnapshot<List<WSCredential>> useCredentials() {
-  final prefs = usePreferences();
-  if (!prefs.hasData) {
-    return const AsyncSnapshot.waiting();
-  }
-  final result = prefs.requireData.wsCredentials ?? [];
-  return AsyncSnapshot.withData(ConnectionState.active, result);
-}
+import 'package:streaming_shared_preferences/streaming_shared_preferences.dart';
 
 AsyncSnapshot<Preferences> usePreferences() {
   final value = useMemoized<Future<Preferences>>(() async {
@@ -80,6 +71,15 @@ class WSCredential {
     return toString() == other.toString();
   }
 
+  WSCredential? equivalentInList(List<WSCredential> list) {
+    for (final e in list) {
+      if (deepEquals(e)) {
+        return e;
+      }
+    }
+    return null;
+  }
+
   bool isInList(List<WSCredential> list) {
     for (final e in list) {
       if (deepEquals(e)) {
@@ -110,45 +110,55 @@ class WSCredential {
 enum PreferenceKeys { wsCredentials }
 
 class Preferences {
-  final SharedPreferences _prefs;
+  final StreamingSharedPreferences _prefs;
 
   static Future<Preferences> get instance async {
-    return Preferences.withPrefs(await SharedPreferences.getInstance());
+    return Preferences.withPrefs(await StreamingSharedPreferences.instance);
   }
 
-  Preferences.withPrefs(SharedPreferences prefs) : _prefs = prefs;
+  Preferences.withPrefs(StreamingSharedPreferences prefs) : _prefs = prefs;
 
-  addCredential(WSCredential value) {
-    final credentials = WSCredential.listDeepCopy(wsCredentials ?? []);
+  addCredential(WSCredential value) async {
+    final credentials = WSCredential.listDeepCopy(
+      await getWSCredentials().first,
+    );
     if (value.isInList(credentials)) {
       return;
     }
     credentials.add(value);
-    wsCredentials = credentials;
+    setWSCredentials(credentials);
   }
 
-  clearCredentials() {
-    wsCredentials = [];
-  }
-
-  List<WSCredential>? get wsCredentials {
-    final data = _prefs.getString(PreferenceKeys.wsCredentials.name);
-    if (data == null) {
-      return null;
-    }
-    final List<dynamic> json = jsonDecode(data) as List<dynamic>;
-    final List<WSCredential> result = [];
-    for (final e in json) {
-      result.add(WSCredential.fromJson(e as Map<String, dynamic>));
-    }
-    return result;
-  }
-
-  set wsCredentials(List<WSCredential>? credentials) {
-    if (credentials == null) {
-      _prefs.remove(PreferenceKeys.wsCredentials.name);
+  removeCredential(WSCredential value) async {
+    final credentials = WSCredential.listDeepCopy(
+      await getWSCredentials().first,
+    );
+    final credentialToBeRemoved = value.equivalentInList(credentials);
+    if (credentialToBeRemoved == null) {
       return;
     }
+    credentials.remove(credentialToBeRemoved);
+    setWSCredentials(credentials);
+  }
+
+  clearCredentials() => setWSCredentials([]);
+
+  Stream<List<WSCredential>> getWSCredentials() {
+    final Preference<String> data = _prefs.getString(
+      PreferenceKeys.wsCredentials.name,
+      defaultValue: "",
+    );
+    return data.map<List<WSCredential>>((s) {
+      final List<dynamic> json = jsonDecode(s) as List<dynamic>;
+      final List<WSCredential> result = [];
+      for (final e in json) {
+        result.add(WSCredential.fromJson(e as Map<String, dynamic>));
+      }
+      return result;
+    });
+  }
+
+  setWSCredentials(List<WSCredential> credentials) {
     final List<Map<String, dynamic>> data = WSCredential.listToJson(
       credentials,
     );
