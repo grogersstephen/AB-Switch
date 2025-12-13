@@ -21,10 +21,12 @@ AsyncSnapshot<Preferences> usePreferences() {
 }
 
 class WSCredential {
+  String? name;
   String host;
   int port;
   String password;
   WSCredential({
+    this.name,
     required this.host,
     required this.port,
     required this.password,
@@ -32,6 +34,7 @@ class WSCredential {
 
   String get url => "ws://$host:$port";
   Map<String, dynamic> toJson() => {
+    "name": name,
     "host": host,
     "port": port,
     "password": password,
@@ -66,6 +69,7 @@ class WSCredential {
 
   static WSCredential fromJson(Map<String, dynamic> json) {
     return WSCredential(
+      name: json["name"],
       host: json["host"],
       port: json["port"],
       password: json["password"],
@@ -85,8 +89,14 @@ class WSCredential {
     return false;
   }
 
-  WSCredential copyWith({String? host, int? port, String? password}) {
+  WSCredential copyWith({
+    String? name,
+    String? host,
+    int? port,
+    String? password,
+  }) {
     return WSCredential(
+      name: name ?? this.name,
       host: host ?? this.host,
       port: port ?? this.port,
       password: password ?? this.password,
@@ -94,7 +104,7 @@ class WSCredential {
   }
 
   WSCredential deepCopy() =>
-      WSCredential(host: host, port: port, password: password);
+      WSCredential(name: name, host: host, port: port, password: password);
 }
 
 enum PreferenceKeys { wsCredentials }
