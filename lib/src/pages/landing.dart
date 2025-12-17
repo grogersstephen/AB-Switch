@@ -2,65 +2,35 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:obs_production_switcher/src/widgets/buttons.dart';
 import 'package:obs_websocket/event.dart';
 import 'package:obs_websocket/obs_websocket.dart';
 
 class LandingPage extends StatelessWidget {
-  final ObsWebSocket? obs;
-  const LandingPage(this.obs, {super.key});
+  final ObsWebSocket? socket;
+  const LandingPage(this.socket, {super.key});
   @override
   Widget build(BuildContext context) {
+    final obs = socket;
+    if (obs == null) {
+      return const Center(child: Text("Connect to OBS"));
+    }
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        obs != null
-            ? Expanded(child: InputsGrid(obs!))
-            : const Expanded(child: Text("Connect to OBS")),
+        Expanded(child: InputsGrid(obs)),
         const SizedBox(height: 40),
-        _goButton(),
-        Row(children: [_startRecordButton(), _stopRecordButton()]),
+        GoButton(obs.transitions.triggerStudioModeTransition),
+        Row(
+          children: [
+            CallbackButton(obs.record.start, label: "Start Record"),
+            CallbackButton(obs.record.stop, label: "Stop Record"),
+            CallbackButton(obs.stream.start, label: "Start Stream"),
+            CallbackButton(obs.stream.stop, label: "Stop Stream"),
+          ],
+        ),
         // const Spacer(),
       ],
-    );
-  }
-
-  _goButton() {
-    return GestureDetector(
-      onTap: obs?.transitions.triggerStudioModeTransition,
-      child: Container(
-        width: 200,
-        height: 100,
-        decoration: BoxDecoration(border: Border.all(width: 4)),
-        child: const Center(child: Text("GO", style: TextStyle(fontSize: 50))),
-      ),
-    );
-  }
-
-  _startRecordButton() {
-    return GestureDetector(
-      onTap: obs?.record.startRecord,
-      child: Container(
-        width: 160,
-        height: 70,
-        decoration: BoxDecoration(border: Border.all(width: 4)),
-        child: const Center(
-          child: Text("Start Record", style: TextStyle(fontSize: 25)),
-        ),
-      ),
-    );
-  }
-
-  _stopRecordButton() {
-    return GestureDetector(
-      onTap: obs?.record.stopRecord,
-      child: Container(
-        width: 160,
-        height: 70,
-        decoration: BoxDecoration(border: Border.all(width: 4)),
-        child: const Center(
-          child: Text("Stop Record", style: TextStyle(fontSize: 25)),
-        ),
-      ),
     );
   }
 }
