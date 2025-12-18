@@ -71,56 +71,84 @@ class Client implements OBSClient {
   @override
   Stream<bool> yieldRecordingStatus() {
     final ctl = StreamController<bool>();
+    // Get the initial status
+    socket.record.getRecordStatus().then((status) {
+      ctl.add(status.outputActive);
+    });
+    // Listen to changes
     socket.addHandler<RecordStateChanged>((change) {
       if (change.outputActive is! bool) {
         throw Exception("outputActive is not bool");
       }
       ctl.add(change.outputActive);
     });
+    // Return the stream
     return ctl.stream;
   }
 
   @override
   Stream<bool> yieldStreamingStatus() {
     final ctl = StreamController<bool>();
+    // Get the initial status
+    socket.stream.getStreamStatus().then((status) {
+      ctl.add(status.outputActive);
+    });
+    // Listen to changes
     socket.addHandler<StreamStateChanged>((change) {
       if (change.outputActive is! bool) {
         throw Exception("outputActive is not bool");
       }
       ctl.add(change.outputActive);
     });
+    // Return the stream
     return ctl.stream;
   }
 
   @override
   Stream<String> yieldProgramSceneName() {
     final ctl = StreamController<String>();
+    // Get the initial program scene
+    getCurrentProgramScene().then((sceneName) {
+      ctl.add(sceneName);
+    });
+    // Listen to changes
     socket.addHandler<CurrentProgramSceneChanged>((change) {
       ctl.add(change.sceneName);
     });
+    // Return the stream
     return ctl.stream;
   }
 
   @override
   Stream<String> yieldPreviewSceneName() {
     final ctl = StreamController<String>();
+    // Get the initial preview scene
+    getCurrentPreviewScene().then((sceneName) {
+      ctl.add(sceneName);
+    });
+    // Listen to changes
     socket.addHandler<CurrentPreviewSceneChanged>((change) {
       ctl.add(change.sceneName);
     });
+    // Return the stream
     return ctl.stream;
   }
 
   @override
   Stream<List<Scene>> yieldSceneList({
     Duration period = const Duration(milliseconds: 1000),
-  }) async* {
-    while (true) {
-      // Yield the list
-      yield (await getSceneList()).scenes;
-
-      // Wait the period
-      await Future.delayed(period);
-    }
+  }) {
+    final ctl = StreamController<List<Scene>>();
+    // Get the initial scene list
+    getSceneList().then((response) {
+      ctl.add(response.scenes);
+    });
+    // Listen to changes
+    socket.addHandler<SceneListChanged>((change) {
+      ctl.add(change.scenes);
+    });
+    // Return the stream
+    return ctl.stream;
   }
 
   Stream<Map<String, List<SceneItemDetail>>> yieldSceneItemList({
