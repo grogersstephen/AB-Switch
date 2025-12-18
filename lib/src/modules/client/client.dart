@@ -33,10 +33,6 @@ abstract interface class OBSClient {
   setCurrentPreviewScene(String sceneName);
 
   triggerStudioModeTransition();
-
-  // Handlers
-  onProgramSceneChanged(Function listener);
-  onPreviewSceneChanged(Function listener);
 }
 
 class Client implements OBSClient {
@@ -72,14 +68,11 @@ class Client implements OBSClient {
   Stream<bool> yieldRecordingStatus() {
     final ctl = StreamController<bool>();
     // Get the initial status
-    socket.record.getRecordStatus().then((status) {
+    socket.record.getRecordStatus().then((RecordStatusResponse status) {
       ctl.add(status.outputActive);
     });
     // Listen to changes
-    socket.addHandler<RecordStateChanged>((change) {
-      if (change.outputActive is! bool) {
-        throw Exception("outputActive is not bool");
-      }
+    socket.addHandler<RecordStateChanged>((RecordStateChanged change) {
       ctl.add(change.outputActive);
     });
     // Return the stream
@@ -94,10 +87,7 @@ class Client implements OBSClient {
       ctl.add(status.outputActive);
     });
     // Listen to changes
-    socket.addHandler<StreamStateChanged>((change) {
-      if (change.outputActive is! bool) {
-        throw Exception("outputActive is not bool");
-      }
+    socket.addHandler<StreamStateChanged>((StreamStateChanged change) {
       ctl.add(change.outputActive);
     });
     // Return the stream
@@ -112,7 +102,9 @@ class Client implements OBSClient {
       ctl.add(sceneName);
     });
     // Listen to changes
-    socket.addHandler<CurrentProgramSceneChanged>((change) {
+    socket.addHandler<CurrentProgramSceneChanged>((
+      CurrentProgramSceneChanged change,
+    ) {
       ctl.add(change.sceneName);
     });
     // Return the stream
@@ -127,7 +119,9 @@ class Client implements OBSClient {
       ctl.add(sceneName);
     });
     // Listen to changes
-    socket.addHandler<CurrentPreviewSceneChanged>((change) {
+    socket.addHandler<CurrentPreviewSceneChanged>((
+      CurrentPreviewSceneChanged change,
+    ) {
       ctl.add(change.sceneName);
     });
     // Return the stream
@@ -144,7 +138,7 @@ class Client implements OBSClient {
       ctl.add(response.scenes);
     });
     // Listen to changes
-    socket.addHandler<SceneListChanged>((change) {
+    socket.addHandler<SceneListChanged>((SceneListChanged change) {
       ctl.add(change.scenes);
     });
     // Return the stream
@@ -250,16 +244,6 @@ class Client implements OBSClient {
   @override
   triggerStudioModeTransition() =>
       socket.transitions.triggerStudioModeTransition();
-
-  // Handlers
-
-  @override
-  onProgramSceneChanged(Function listener) =>
-      socket.addHandler<CurrentProgramSceneChanged>(listener);
-
-  @override
-  onPreviewSceneChanged(Function listener) =>
-      socket.addHandler<CurrentPreviewSceneChanged>(listener);
 }
 
 class NoOpClient implements OBSClient {
@@ -342,17 +326,6 @@ class NoOpClient implements OBSClient {
 
   @override
   triggerStudioModeTransition() {
-    throw UnimplementedError();
-  }
-
-  // Handlers
-  @override
-  onProgramSceneChanged(Function listener) {
-    throw UnimplementedError();
-  }
-
-  @override
-  onPreviewSceneChanged(Function listener) {
     throw UnimplementedError();
   }
 
