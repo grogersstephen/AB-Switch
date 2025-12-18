@@ -30,7 +30,7 @@ class AppScaffold extends HookWidget {
   Widget build(BuildContext context) {
     final snackbarStreamCtl = StreamController<SnackbarMessage>();
     final snack = snackbarStreamCtl.add;
-    final client = useState<OBSClient>(NoOpClient());
+    final client = useState<OBSClient>(const NoOpClient());
 
     return SafeArea(
       child: Scaffold(
@@ -47,8 +47,6 @@ class AppScaffold extends HookWidget {
                   builder: (context) => const SelectEndpointDialog(),
                 );
                 client.value = await res ?? const NoOpClient();
-                // final client = await clientFuture;
-                // obsWebSocketNotifier.value = socket;
               },
             ),
           ],
