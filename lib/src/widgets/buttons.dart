@@ -1,36 +1,32 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
-class RecordButton extends StatefulWidget {
+class ToggleButton extends StatelessWidget {
   final VoidCallback callback;
   final String label;
   final double width;
   final double height;
-  const RecordButton(
+  final Color? borderColor;
+  const ToggleButton(
     this.callback, {
     this.label = "press",
     this.width = 160,
     this.height = 70,
+    this.borderColor,
     super.key,
   });
 
   @override
-  State<RecordButton> createState() => RecordButtonState();
-}
-
-class RecordButtonState extends State<RecordButton> {
-  @override
   Widget build(BuildContext context) {
-    late Color _borderColor;
     return GestureDetector(
-      onTap: widget.callback,
+      onTap: callback,
       child: Container(
-        width: widget.width,
-        height: widget.height,
-        decoration: BoxDecoration(border: Border.all(width: 4)),
-        child: Center(
-          child: Text(widget.label, style: const TextStyle(fontSize: 25)),
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          border: Border.all(width: 4, color: borderColor ?? Colors.white),
         ),
+        child: Center(child: Text(label, style: const TextStyle(fontSize: 25))),
       ),
     );
   }

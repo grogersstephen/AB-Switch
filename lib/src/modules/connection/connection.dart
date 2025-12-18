@@ -6,6 +6,7 @@ import 'package:obs_production_switcher/src/modules/preferences/preferences.dart
 import 'package:obs_production_switcher/src/widgets/input.dart';
 import 'package:obs_production_switcher/src/widgets/list_tile.dart';
 import 'package:obs_production_switcher/src/widgets/ice.dart';
+import 'package:obs_production_switcher/src/modules/client/client.dart';
 
 EdgeInsets _dialogInsetPadding(
   BuildContext context, {
@@ -58,9 +59,7 @@ class SelectEndpointDialog extends HookWidget {
                     // Pop the dialog
                     Navigator.pop(
                       context,
-                      statusCompleter.future.then<ObsWebSocket?>(
-                        (e) => e.socket,
-                      ),
+                      statusCompleter.future.then<OBSClient>((e) => e.client),
                     );
                     final killer = Completer<Null>();
                     showDialog(
@@ -103,7 +102,7 @@ class SelectEndpointDialog extends HookWidget {
                             true,
                             message:
                                 "Successfully connected to OBS ${version.obsVersion}",
-                            socket: socket,
+                            client: Client(socket),
                           ),
                         );
                       },
@@ -200,8 +199,12 @@ AsyncSnapshot<bool> useIsConnected() {
 class ConnectionStatus {
   final bool success;
   final String? message;
-  final ObsWebSocket? socket;
-  ConnectionStatus(this.success, {this.message, this.socket});
+  final OBSClient client;
+  ConnectionStatus(
+    this.success, {
+    this.message,
+    this.client = const NoOpClient(),
+  });
 }
 
 class EstablishingConnectionDialog extends StatelessWidget {
