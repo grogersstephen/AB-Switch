@@ -29,10 +29,12 @@ class LandingPage extends HookWidget {
             ToggleButton(
               client.toggleRecord,
               label: recording.data == true ? "Stop Record" : "Start Record",
+              borderColor: recording.data == true ? Colors.red : Colors.white,
             ),
             ToggleButton(
               client.toggleStream,
               label: streaming.data == true ? "Stop Stream" : "Start Stream",
+              borderColor: streaming.data == true ? Colors.red : Colors.white,
             ),
           ],
         ),
