@@ -13,11 +13,11 @@ class LandingPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final client = ref.watch(clientPProvider);
-    final recording = useStream(client.yieldRecordingStatus());
-    final streaming = useStream(client.yieldStreamingStatus());
     if (client is NoOpClient) {
       return const Center(child: Text("Connect to OBS"));
     }
+    final recording = useStream(client.yieldRecordingStatus());
+    final streaming = useStream(client.yieldStreamingStatus());
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
