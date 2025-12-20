@@ -10,6 +10,7 @@ import 'package:obs_websocket/event.dart';
 import 'package:obs_production_switcher/src/modules/connection/connection.dart';
 import 'package:obs_production_switcher/src/pages/landing.dart';
 import 'package:obs_production_switcher/src/modules/client/client.dart';
+import 'package:obs_production_switcher/src/modules/snackbar/snackbar.dart';
 
 class OBSSwitchApp extends StatelessWidget {
   const OBSSwitchApp({super.key});
@@ -47,19 +48,21 @@ class AppScaffold extends ConsumerWidget {
                 );
                 if (client is! NoOpClient && client != null) {
                   ref.read(clientPProvider.notifier).update(client);
+                  ref
+                      .read(snackbarMsgProvider.notifier)
+                      .send(
+                        const SnackbarMessage("successfully connected to OBS"),
+                      );
                 }
               },
             ),
           ],
         ),
         drawer: null,
-        body: SnackbarListener(
-          stream: snackbarStreamCtl.stream,
-          child: const Padding(
-            padding: EdgeInsets.all(30),
-            child: LandingPage(),
-            // : const CircularProgressIndicator(),
-          ),
+        body: const Padding(
+          padding: EdgeInsets.all(30),
+          child: SnackbarListener(child: LandingPage()),
+          // : const CircularProgressIndicator(),
         ),
       ),
     );
