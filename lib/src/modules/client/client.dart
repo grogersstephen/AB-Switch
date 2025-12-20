@@ -17,6 +17,17 @@ class ClientP extends _$ClientP {
   }
 }
 
+@Riverpod(keepAlive: true)
+Stream<VersionResponse> clientKeepAlive(Ref ref) async* {
+  bool active = true;
+  ref.onDispose(() => active = false);
+  while (active) {
+    final client = ref.read(clientPProvider);
+    await Future.delayed(const Duration(seconds: 5));
+    yield await client.getVersion();
+  }
+}
+
 abstract interface class OBSClient {
   Future<VersionResponse> getVersion();
   Future<bool> isImageFormatSupported(String imageFormat);

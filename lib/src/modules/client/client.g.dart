@@ -54,3 +54,37 @@ abstract class _$ClientP extends $Notifier<OBSClient> {
     element.handleValue(ref, created);
   }
 }
+
+@ProviderFor(clientKeepAlive)
+const clientKeepAliveProvider = ClientKeepAliveProvider._();
+
+final class ClientKeepAliveProvider extends $FunctionalProvider<
+        AsyncValue<VersionResponse>, VersionResponse, Stream<VersionResponse>>
+    with $FutureModifier<VersionResponse>, $StreamProvider<VersionResponse> {
+  const ClientKeepAliveProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'clientKeepAliveProvider',
+          isAutoDispose: false,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$clientKeepAliveHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<VersionResponse> $createElement(
+          $ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<VersionResponse> create(Ref ref) {
+    return clientKeepAlive(ref);
+  }
+}
+
+String _$clientKeepAliveHash() => r'63a1a0c5f9665e0e0ca87940b33b455640682419';
