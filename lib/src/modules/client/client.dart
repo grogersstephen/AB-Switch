@@ -3,6 +3,31 @@ import 'dart:typed_data';
 import 'package:obs_websocket/event.dart';
 import 'package:obs_websocket/obs_websocket.dart';
 
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'client.g.dart';
+
+@Riverpod(keepAlive: true)
+class ClientP extends _$ClientP {
+  @override
+  OBSClient build() => const NoOpClient();
+
+  update(OBSClient value) {
+    state = value;
+  }
+}
+
+@Riverpod(keepAlive: true)
+Stream<VersionResponse> clientKeepAlive(Ref ref) async* {
+  bool active = true;
+  ref.onDispose(() => active = false);
+  while (active) {
+    final client = ref.read(clientPProvider);
+    await Future.delayed(const Duration(seconds: 5));
+    yield await client.getVersion();
+  }
+}
+
 abstract interface class OBSClient {
   Future<VersionResponse> getVersion();
   Future<bool> isImageFormatSupported(String imageFormat);

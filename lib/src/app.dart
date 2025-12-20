@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:obs_production_switcher/src/modules/preferences/preferences.dart';
 import 'package:obs_production_switcher/src/modules/snackbar/snackbar.dart';
 import 'package:obs_production_switcher/src/theme.dart';
@@ -24,13 +24,12 @@ class OBSSwitchApp extends StatelessWidget {
   }
 }
 
-class AppScaffold extends HookWidget {
+class AppScaffold extends ConsumerWidget {
   const AppScaffold({super.key});
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final snackbarStreamCtl = StreamController<SnackbarMessage>();
     final snack = snackbarStreamCtl.add;
-    final client = useState<OBSClient>(const NoOpClient());
 
     return SafeArea(
       child: Scaffold(
@@ -42,11 +41,13 @@ class AppScaffold extends HookWidget {
             IconButton(
               icon: const Icon(Icons.link),
               onPressed: () async {
-                final res = await showDialog<Future<OBSClient>?>(
+                final client = await await showDialog<Future<OBSClient>?>(
                   context: context,
                   builder: (context) => const SelectEndpointDialog(),
                 );
-                client.value = await res ?? const NoOpClient();
+                if (client is! NoOpClient && client != null) {
+                  ref.read(clientPProvider.notifier).update(client);
+                }
               },
             ),
           ],
@@ -54,9 +55,9 @@ class AppScaffold extends HookWidget {
         drawer: null,
         body: SnackbarListener(
           stream: snackbarStreamCtl.stream,
-          child: Padding(
-            padding: const EdgeInsets.all(30),
-            child: LandingPage(client.value),
+          child: const Padding(
+            padding: EdgeInsets.all(30),
+            child: LandingPage(),
             // : const CircularProgressIndicator(),
           ),
         ),
