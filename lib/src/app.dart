@@ -55,9 +55,9 @@ class AppScaffold extends ConsumerWidget {
         drawer: null,
         body: SnackbarListener(
           stream: snackbarStreamCtl.stream,
-          child: Padding(
-            padding: const EdgeInsets.all(30),
-            child: LandingPage(client.value),
+          child: const Padding(
+            padding: EdgeInsets.all(30),
+            child: LandingPage(),
             // : const CircularProgressIndicator(),
           ),
         ),
