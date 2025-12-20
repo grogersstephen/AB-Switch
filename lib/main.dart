@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import './src/app.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:obs_production_switcher/src/app.dart';
 
 void main() {
   onStartUp();
@@ -19,7 +20,7 @@ void onStartUp() async {
             children: [
               Center(
                 child: Text(
-                  "OBS Switch",
+                  "A/B Switch",
                   style: TextStyle(
                     fontFamily: "Orbitron",
                     fontSize: 48,
@@ -40,15 +41,11 @@ void onStartUp() async {
       ),
       onGenerateRoute: (settings) {
         return MaterialPageRoute(
-          builder: (context) => const Center(
-            child: Text('Wow!'),
-          ),
+          builder: (context) => const Center(child: Text('Wow!')),
         );
       },
     ),
   );
 
-  runApp(
-    const OBSSwitchApp(),
-  );
+  runApp(const ProviderScope(child: OBSSwitchApp()));
 }
