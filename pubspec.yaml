@@ -41,6 +41,7 @@ dependencies:
   streaming_shared_preferences: ^2.0.0
   hooks_riverpod: ^3.0.3
   riverpod_annotation: ^3.0.3
+  flutter_riverpod: ^3.0.3
 
 dev_dependencies:
   flutter_test:
