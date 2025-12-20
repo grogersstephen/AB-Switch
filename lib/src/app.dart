@@ -45,9 +45,9 @@ class AppScaffold extends ConsumerWidget {
                   context: context,
                   builder: (context) => const SelectEndpointDialog(),
                 );
-                ref
-                    .read(clientPProvider.notifier)
-                    .update(client ?? const NoOpClient());
+                if (client != null) {
+                  ref.read(clientPProvider.notifier).update(client);
+                }
               },
             ),
           ],
