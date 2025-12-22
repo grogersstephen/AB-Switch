@@ -57,12 +57,13 @@ class InputsGrid extends HookWidget {
     final previewSceneName = useStream(client.yieldPreviewSceneName());
 
     final screenSize = MediaQuery.of(context).size;
+    final length = scenes.data?.length ?? 0;
     return GridView.count(
       crossAxisCount: screenSize.width ~/ 200,
       mainAxisSpacing: 25,
       crossAxisSpacing: 25,
-      children: List<Widget>.generate(scenes.data?.length ?? 0, (i) {
-        final scene = scenes.data?[i];
+      children: List<Widget>.generate(length, (i) {
+        final scene = scenes.data?[length - i - 1];
         final sceneName = scene?.sceneName;
         final isProgramScene = sceneName == programSceneName.data;
         final isPreviewScene = sceneName == previewSceneName.data;

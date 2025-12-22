@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:obs_production_switcher/src/modules/snackbar/snackbar.dart';
+import 'package:obs_production_switcher/src/modules/dialoger/dialoger.dart';
 import 'package:obs_production_switcher/src/theme.dart';
 import 'package:obs_production_switcher/src/modules/connection/connection.dart';
 import 'package:obs_production_switcher/src/pages/landing.dart';
@@ -28,6 +29,8 @@ class AppScaffold extends ConsumerWidget {
     snack(String msg, {Color? backgroundColor}) => ref
         .read(snackbarMsgProvider.notifier)
         .send(SnackbarMessage(msg, backgroundColor: backgroundColor));
+    spawnDialog(Widget widget, {bool barrierDismissable = true}) =>
+        ref.read(dialogSpawnerProvider.notifier).spawn(widget);
 
     return SafeArea(
       child: Scaffold(
@@ -38,29 +41,14 @@ class AppScaffold extends ConsumerWidget {
           actions: [
             IconButton(
               icon: const Icon(Icons.link),
-              onPressed: () async {
-                final client = await await showDialog<Future<OBSClient>?>(
-                  context: context,
-                  builder: (context) => const SelectEndpointDialog(),
-                );
-                if (client is NoOpClient || client == null) {
-                  snack(
-                    "could not connect to client",
-                    backgroundColor: Colors.red,
-                  );
-                }
-                if (client is! NoOpClient && client != null) {
-                  ref.read(clientPProvider.notifier).update(client);
-                  snack("successfully connected to OBS");
-                }
-              },
+              onPressed: () => spawnDialog(const SelectEndpointDialog()),
             ),
           ],
         ),
         drawer: null,
         body: const Padding(
           padding: EdgeInsets.all(30),
-          child: SnackbarListener(child: LandingPage()),
+          child: DialogListener(child: SnackbarListener(child: LandingPage())),
         ),
       ),
     );
