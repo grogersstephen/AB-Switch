@@ -15,6 +15,10 @@ class ClientP extends _$ClientP {
   update(OBSClient value) {
     state = value;
   }
+
+  updateWithFuture(Future<OBSClient> value) async {
+    state = await value;
+  }
 }
 
 @Riverpod(keepAlive: true)

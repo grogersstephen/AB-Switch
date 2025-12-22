@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:obs_production_switcher/src/modules/dialoger/dialoger.dart';
 import 'package:obs_websocket/obs_websocket.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:obs_production_switcher/src/modules/preferences/preferences.dart';
@@ -23,10 +25,10 @@ EdgeInsets _dialogInsetPadding(
   );
 }
 
-class SelectEndpointDialog extends HookWidget {
+class SelectEndpointDialog extends HookConsumerWidget {
   const SelectEndpointDialog({super.key});
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final prefs = usePreferences().data;
 
     return Dialog(
@@ -54,66 +56,12 @@ class SelectEndpointDialog extends HookWidget {
                 final credential = credentials[i];
                 return BorderListTile(
                   onTap: () async {
-                    final Completer<ConnectionStatus> statusCompleter =
-                        Completer<ConnectionStatus>();
-                    // Pop the dialog
-                    Navigator.pop(
-                      context,
-                      statusCompleter.future.then<OBSClient>((e) => e.client),
-                    );
-                    final killer = Completer<Null>();
-                    showDialog(
+                    // Connect
+                    await _connect(
+                      credential,
+                      ref: ref,
                       context: context,
-                      barrierDismissible: false,
-                      builder: (context) => EstablishingConnectionDialog(
-                        statusFuture: statusCompleter.future,
-                        killer: killer,
-                      ),
-                    );
-                    // Try to Connect
-                    final url = "ws://${credential.host}:${credential.port}";
-
-                    killer.future.then((v) {
-                      if (statusCompleter.isCompleted) {
-                        return;
-                      }
-                      statusCompleter.complete(
-                        ConnectionStatus(
-                          false,
-                          message: "Cancelled Connection",
-                        ),
-                      );
-                    });
-
-                    ObsWebSocket.connect(
-                      url,
-                      password: credential.password,
-                    ).then(
-                      (socket) async {
-                        // Get the version
-                        final version = (await socket.general.version);
-                        if (statusCompleter.isCompleted) {
-                          return;
-                        }
-                        // SUCCESSFUL CONNECTION
-                        prefs?.addCredential(credential);
-                        statusCompleter.complete(
-                          ConnectionStatus(
-                            true,
-                            message:
-                                "Successfully connected to OBS ${version.obsVersion}",
-                            client: Client(socket),
-                          ),
-                        );
-                      },
-                      onError: (e, st) {
-                        statusCompleter.complete(
-                          ConnectionStatus(
-                            false,
-                            message: "Could not connect to $url",
-                          ),
-                        );
-                      },
+                      onSuccess: () => prefs?.addCredential(credential),
                     );
                   },
                   title: Text(credential.name ?? credential.host),
@@ -138,6 +86,83 @@ class SelectEndpointDialog extends HookWidget {
         ),
       ),
     );
+  }
+
+  _connect(
+    WSCredential credential, {
+    required WidgetRef ref,
+    required BuildContext context,
+    VoidCallback? onSuccess,
+  }) async {
+    final Completer<ConnectionStatus> statusCompleter =
+        Completer<ConnectionStatus>();
+    ref
+        .read(clientPProvider.notifier)
+        .updateWithFuture(
+          statusCompleter.future.then(
+            (connectionStatus) => connectionStatus.client,
+          ),
+        );
+
+    // Pop the dialog
+    Navigator.pop(context);
+
+    // This will be completed if the user taps 'cancel' on the EstablishingConnectionDialog
+    final connectionCanceler = Completer<Null>();
+
+    // Spawn the Establishing Connection Dialog
+    ref
+        .read(dialogSpawnerProvider.notifier)
+        .spawn(
+          EstablishingConnectionDialog(
+            statusFuture: statusCompleter.future,
+            onCancel: connectionCanceler.complete,
+          ),
+          barrierDismissable: false,
+        );
+
+    // Try to Connect
+    final url = "ws://${credential.host}:${credential.port}";
+
+    // Wait for the canceler to be completed
+    connectionCanceler.future.then((v) {
+      if (statusCompleter.isCompleted) {
+        return;
+      }
+      statusCompleter.complete(
+        ConnectionStatus(false, message: "Cancelled Connection"),
+      );
+    });
+
+    final ObsWebSocket conn;
+    try {
+      conn = await ObsWebSocket.connect(url, password: credential.password);
+    } catch (e) {
+      // If the connection failed, complete the statusCompleter with a false value
+      if (!statusCompleter.isCompleted) {
+        statusCompleter.complete(
+          ConnectionStatus(false, message: "Could not connect to $url"),
+        );
+      }
+      return;
+    }
+
+    // If the 'cancel' button was tapped, the statusCompleter should already be completed
+    if (statusCompleter.isCompleted) {
+      return;
+    }
+
+    // Get the version and complete the statusCompleter
+    //   which will pass the OBSClient to the provider
+    final version = (await conn.general.version);
+    statusCompleter.complete(
+      ConnectionStatus(
+        true,
+        message: "Successfully connected to OBS ${version.obsVersion}",
+        client: Client(conn),
+      ),
+    );
+    onSuccess?.call();
   }
 }
 
@@ -189,13 +214,6 @@ class AddConnectionDialog extends HookWidget {
   }
 }
 
-AsyncSnapshot<bool> useIsConnected() {
-  final value = useMemoized<Future<bool>>(() async {
-    return false;
-  });
-  return useFuture(value);
-}
-
 class ConnectionStatus {
   final bool success;
   final String? message;
@@ -209,10 +227,10 @@ class ConnectionStatus {
 
 class EstablishingConnectionDialog extends StatelessWidget {
   final Future<ConnectionStatus> statusFuture;
-  final Completer killer;
+  final VoidCallback onCancel;
   const EstablishingConnectionDialog({
     required this.statusFuture,
-    required this.killer,
+    required this.onCancel,
     super.key,
   });
   @override
@@ -265,7 +283,7 @@ class EstablishingConnectionDialog extends StatelessWidget {
                       const Text("Establishing Connection"),
                       const CircularProgressIndicator(),
                       ElevatedButton(
-                        onPressed: killer.complete,
+                        onPressed: onCancel,
                         child: const Text("CANCEL"),
                       ),
                     ],
