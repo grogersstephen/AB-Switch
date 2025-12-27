@@ -47,6 +47,7 @@ abstract interface class OBSClient {
   Future<String> getCurrentProgramScene();
   Future<String> getCurrentPreviewScene();
   Future<Uint8List> getSceneImage(String sceneName);
+  Future<bool> getStudioModeEnabled();
 
   // Streams
   Stream<bool> yieldRecordingStatus();
@@ -55,11 +56,14 @@ abstract interface class OBSClient {
   Stream<Map<String, Uint8List>> yieldSceneImages();
   Stream<String> yieldProgramSceneName();
   Stream<String> yieldPreviewSceneName();
+  Stream<bool> yieldStudioModeEnabled();
 
   getSourceScreenshot(String sourceName);
 
   // Setters
   setCurrentPreviewScene(String sceneName);
+  setCurrentProgramScene(String sceneName);
+  setStudioModeEnabled(bool value);
 
   triggerStudioModeTransition();
 }
@@ -97,9 +101,14 @@ class Client implements OBSClient {
   Stream<bool> yieldRecordingStatus() {
     final ctl = StreamController<bool>();
     // Get the initial status
-    socket.record.getRecordStatus().then((RecordStatusResponse status) {
-      ctl.add(status.outputActive);
-    });
+    socket.record
+        .getRecordStatus()
+        .then((RecordStatusResponse status) {
+          ctl.add(status.outputActive);
+        })
+        .catchError((_) {
+          // TODO log error
+        });
     // Listen to changes
     socket.addHandler<RecordStateChanged>((RecordStateChanged change) {
       ctl.add(change.outputActive);
@@ -112,9 +121,14 @@ class Client implements OBSClient {
   Stream<bool> yieldStreamingStatus() {
     final ctl = StreamController<bool>();
     // Get the initial status
-    socket.stream.getStreamStatus().then((status) {
-      ctl.add(status.outputActive);
-    });
+    socket.stream
+        .getStreamStatus()
+        .then((status) {
+          ctl.add(status.outputActive);
+        })
+        .catchError((_) {
+          // TODO log error
+        });
     // Listen to changes
     socket.addHandler<StreamStateChanged>((StreamStateChanged change) {
       ctl.add(change.outputActive);
@@ -127,9 +141,13 @@ class Client implements OBSClient {
   Stream<String> yieldProgramSceneName() {
     final ctl = StreamController<String>();
     // Get the initial program scene
-    getCurrentProgramScene().then((sceneName) {
-      ctl.add(sceneName);
-    });
+    getCurrentProgramScene()
+        .then((sceneName) {
+          ctl.add(sceneName);
+        })
+        .catchError((_) {
+          // TODO log error
+        });
     // Listen to changes
     socket.addHandler<CurrentProgramSceneChanged>((
       CurrentProgramSceneChanged change,
@@ -144,9 +162,15 @@ class Client implements OBSClient {
   Stream<String> yieldPreviewSceneName() {
     final ctl = StreamController<String>();
     // Get the initial preview scene
-    getCurrentPreviewScene().then((sceneName) {
-      ctl.add(sceneName);
-    });
+    getCurrentPreviewScene()
+        .then((sceneName) {
+          ctl.add(sceneName);
+        })
+        .catchError((_) {
+          // an error is thrown when the ui is not in studio mode
+          null;
+        });
+
     // Listen to changes
     socket.addHandler<CurrentPreviewSceneChanged>((
       CurrentPreviewSceneChanged change,
@@ -163,9 +187,13 @@ class Client implements OBSClient {
   }) {
     final ctl = StreamController<List<Scene>>();
     // Get the initial scene list
-    getSceneList().then((response) {
-      ctl.add(response.scenes);
-    });
+    getSceneList()
+        .then((response) {
+          ctl.add(response.scenes);
+        })
+        .catchError((_) {
+          // TODO: log error
+        });
     // Listen to changes
     socket.addHandler<SceneListChanged>((SceneListChanged change) {
       ctl.add(change.scenes);
@@ -205,8 +233,12 @@ class Client implements OBSClient {
       socket.scenes.getCurrentProgramScene();
 
   @override
-  Future<String> getCurrentPreviewScene() =>
-      socket.scenes.getCurrentPreviewScene();
+  Future<String> getCurrentPreviewScene() async {
+    if (await getStudioModeEnabled()) {
+      return socket.scenes.getCurrentPreviewScene();
+    }
+    throw Exception("studio mode is not enabled");
+  }
 
   @override
   Future<Uint8List> getSceneImage(String sceneName) async {
@@ -217,6 +249,12 @@ class Client implements OBSClient {
     }
     return (await getSourceScreenshot(firstItem.sourceName)).bytes;
   }
+
+  @override
+  Future<bool> getStudioModeEnabled() => socket.ui.getStudioModeEnabled();
+
+  @override
+  setStudioModeEnabled(bool value) => socket.ui.setStudioModeEnabled(value);
 
   @override
   Stream<Map<String, Uint8List>> yieldSceneImages({
@@ -251,6 +289,25 @@ class Client implements OBSClient {
   }
 
   @override
+  yieldStudioModeEnabled() {
+    final ctl = StreamController<bool>();
+    // Get the initial scene list
+    getStudioModeEnabled()
+        .then((bool value) {
+          ctl.add(value);
+        })
+        .catchError((_) {
+          // TODO log error
+        });
+    // Listen to changes
+    socket.addHandler<StudioModeStateChanged>((StudioModeStateChanged change) {
+      ctl.add(change.studioModeEnabled);
+    });
+    // Return the stream
+    return ctl.stream;
+  }
+
+  @override
   Future<SourceScreenshotResponse> getSourceScreenshot(
     String sourceName, {
     String imageFormat = "jpeg",
@@ -269,6 +326,10 @@ class Client implements OBSClient {
   @override
   setCurrentPreviewScene(String sceneName) =>
       socket.scenes.setCurrentPreviewScene(sceneName);
+
+  @override
+  setCurrentProgramScene(String sceneName) =>
+      socket.scenes.setCurrentProgramScene(sceneName);
 
   @override
   triggerStudioModeTransition() =>
@@ -347,9 +408,24 @@ class NoOpClient implements OBSClient {
     throw UnimplementedError();
   }
 
+  @override
+  getStudioModeEnabled() {
+    throw UnimplementedError();
+  }
+
   // Setters
   @override
   setCurrentPreviewScene(String sceneName) {
+    throw UnimplementedError();
+  }
+
+  @override
+  setCurrentProgramScene(String sceneName) {
+    throw UnimplementedError();
+  }
+
+  @override
+  setStudioModeEnabled(bool value) {
     throw UnimplementedError();
   }
 
@@ -387,6 +463,11 @@ class NoOpClient implements OBSClient {
 
   @override
   Stream<String> yieldPreviewSceneName() {
+    throw UnimplementedError();
+  }
+
+  @override
+  Stream<bool> yieldStudioModeEnabled() {
     throw UnimplementedError();
   }
 }

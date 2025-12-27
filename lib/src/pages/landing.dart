@@ -6,9 +6,9 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:obs_production_switcher/src/widgets/buttons.dart';
 import 'package:obs_production_switcher/src/modules/client/client.dart';
+import 'package:obs_production_switcher/src/widgets/double_bordered_container.dart';
 
 class LandingPage extends HookConsumerWidget {
-  // final ObsWebSocket? socket;
   const LandingPage({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,12 +18,15 @@ class LandingPage extends HookConsumerWidget {
     }
     final recording = useStream(client.yieldRecordingStatus());
     final streaming = useStream(client.yieldStreamingStatus());
+    final studioModeEnabled = useStream(client.yieldStudioModeEnabled());
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Expanded(child: InputsGrid(client)),
         const SizedBox(height: 40),
-        GoButton(client.triggerStudioModeTransition),
+        studioModeEnabled.data == true
+            ? GoButton(client.triggerStudioModeTransition)
+            : const SizedBox.shrink(),
         Row(
           children: [
             ToggleButton(
@@ -51,10 +54,10 @@ class InputsGrid extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final scenes = useStream(client.yieldSceneList());
-    // final sceneImages = useStream(client.yieldSceneImages());
     final sceneImages = useStream(const Stream.empty());
     final programSceneName = useStream(client.yieldProgramSceneName());
     final previewSceneName = useStream(client.yieldPreviewSceneName());
+    final studioModeEnabled = useStream(client.yieldStudioModeEnabled());
 
     final screenSize = MediaQuery.of(context).size;
     final length = scenes.data?.length ?? 0;
@@ -67,26 +70,44 @@ class InputsGrid extends HookWidget {
         final sceneName = scene?.sceneName;
         final isProgramScene = sceneName == programSceneName.data;
         final isPreviewScene = sceneName == previewSceneName.data;
+        final isInStudioMode = studioModeEnabled.data == true;
         final Uint8List? imageBytes = sceneImages.data?[sceneName];
+        Color innerBorderColor = Colors.white;
+        Color outerBorderColor = Colors.white;
+        double innerBorderWidth = 0.0;
+        double outerBorderWidth = 2.0;
+        if (isProgramScene) {
+          innerBorderColor = Colors.red;
+          outerBorderColor = Colors.red;
+          innerBorderWidth = 0.0;
+          outerBorderWidth = 8.0;
+        }
+        if (isInStudioMode && isPreviewScene) {
+          if (isProgramScene) {
+            innerBorderColor = Colors.red;
+            outerBorderColor = Colors.green;
+            innerBorderWidth = 6.0;
+            outerBorderWidth = 3.0;
+          } else {
+            innerBorderColor = Colors.green;
+            outerBorderColor = Colors.green;
+            innerBorderWidth = 0.0;
+            outerBorderWidth = 8.0;
+          }
+        }
         return GestureDetector(
           onTap: sceneName == null
               ? null
               : () {
-                  client.setCurrentPreviewScene(sceneName);
+                  studioModeEnabled.data == true
+                      ? client.setCurrentPreviewScene(sceneName)
+                      : client.setCurrentProgramScene(sceneName);
                 },
-          child: Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: isProgramScene
-                    ? Colors.red
-                    : isPreviewScene
-                    ? Colors.green
-                    : Colors.white,
-                width: isProgramScene || isPreviewScene ? 8.0 : 2.0,
-              ),
-            ),
+          child: DoubleBorderedContainer(
+            innerBorderColor: innerBorderColor,
+            outerBorderColor: outerBorderColor,
+            innerBorderWidth: innerBorderWidth,
+            outerBorderWidth: outerBorderWidth,
             child: Stack(
               children: [
                 imageBytes != null
