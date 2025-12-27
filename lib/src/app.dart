@@ -1,54 +1,90 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:obs_production_switcher/src/modules/snackbar/snackbar.dart';
 import 'package:obs_production_switcher/src/modules/dialoger/dialoger.dart';
 import 'package:obs_production_switcher/src/theme.dart';
 import 'package:obs_production_switcher/src/modules/connection/connection.dart';
 import 'package:obs_production_switcher/src/pages/landing.dart';
-import 'package:obs_production_switcher/src/modules/client/client.dart';
+import 'package:obs_production_switcher/src/pages/not_found.dart';
+
+enum Routes {
+  landing('/');
+
+  const Routes(this.path); // Constructor to associate the path string
+  final String path;
+
+  static Routes? fromPath(String path) {
+    for (var route in Routes.values) {
+      if (route.path == path) {
+        return route;
+      }
+    }
+    return null; // Return null if no matching route is found
+  }
+}
 
 class OBSSwitchApp extends StatelessWidget {
   const OBSSwitchApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
+    final router = GoRouter(
+      initialLocation: Routes.landing.path,
+      errorBuilder: (context, state) =>
+          const AppScaffold(pageTitle: "404 - Not Found", body: NotFoundPage()),
+      routes: [
+        ShellRoute(
+          builder: (context, state, child) {
+            return AppScaffold(
+              body: Padding(padding: const EdgeInsets.all(4), child: child),
+              pageTitle: state.name ?? "",
+            );
+          },
+          routes: [
+            GoRoute(
+              name: 'Landing',
+              path: Routes.landing.path,
+              builder: (context, state) => const LandingPage(),
+            ),
+          ],
+        ),
+      ],
+    );
+
+    return MaterialApp.router(
+      routerConfig: router,
       theme: OBSSwitchTheme.dark(),
-      home: Builder(builder: (context) => const AppScaffold()),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
 
 class AppScaffold extends ConsumerWidget {
-  const AppScaffold({super.key});
+  final Widget body;
+  final String pageTitle;
+  const AppScaffold({required this.body, required this.pageTitle, super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    snack(String msg, {Color? backgroundColor}) => ref
-        .read(snackbarMsgProvider.notifier)
-        .send(SnackbarMessage(msg, backgroundColor: backgroundColor));
-    spawnDialog(Widget widget, {bool barrierDismissable = true}) =>
-        ref.read(dialogSpawnerProvider.notifier).spawn(widget);
-
     return SafeArea(
       child: Scaffold(
         floatingActionButton: null,
         resizeToAvoidBottomInset: true,
         appBar: AppBar(
-          title: const Text("A/B Switch"),
+          title: Text(pageTitle),
           actions: [
             IconButton(
               icon: const Icon(Icons.link),
-              onPressed: () => spawnDialog(const SelectEndpointDialog()),
+              onPressed: () => ref
+                  .read(dialogSpawnerProvider.notifier)
+                  .spawn(const SelectEndpointDialog()),
             ),
           ],
         ),
         drawer: null,
-        body: const Padding(
-          padding: EdgeInsets.all(30),
-          child: DialogListener(child: SnackbarListener(child: LandingPage())),
+        body: Padding(
+          padding: const EdgeInsets.all(30),
+          child: DialogListener(child: SnackbarListener(child: body)),
         ),
       ),
     );
