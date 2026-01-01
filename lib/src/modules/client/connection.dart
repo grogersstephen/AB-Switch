@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:obs_production_switcher/src/app.dart';
 import 'package:obs_production_switcher/src/modules/dialoger/dialoger.dart';
+import 'package:obs_production_switcher/src/modules/gonavigator/gonavigator.dart';
 import 'package:obs_websocket/obs_websocket.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:obs_production_switcher/src/modules/preferences/preferences.dart';
@@ -10,7 +12,7 @@ import 'package:obs_production_switcher/src/widgets/list_tile.dart';
 import 'package:obs_production_switcher/src/widgets/ice.dart';
 import 'package:obs_production_switcher/src/modules/client/client.dart';
 
-EdgeInsets _dialogInsetPadding(
+EdgeInsets dialogInsetPadding(
   BuildContext context, {
   double dialogWidth = 400.0,
   double edgePaddingV = 50.0,
@@ -32,7 +34,7 @@ class SelectEndpointDialog extends HookConsumerWidget {
     final prefs = usePreferences().data;
 
     return Dialog(
-      insetPadding: _dialogInsetPadding(context),
+      insetPadding: dialogInsetPadding(context),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
         child: StreamBuilder<List<WSCredential>>(
@@ -98,7 +100,7 @@ class SelectEndpointDialog extends HookConsumerWidget {
         Completer<ConnectionStatus>();
     ref
         .read(clientPProvider.notifier)
-        .updateWithFuture(
+        .update(
           statusCompleter.future.then(
             (connectionStatus) => connectionStatus.client,
           ),
@@ -110,16 +112,17 @@ class SelectEndpointDialog extends HookConsumerWidget {
     // This will be completed if the user taps 'cancel' on the EstablishingConnectionDialog
     final connectionCanceler = Completer<Null>();
 
+    ref.read(goNavigatorProvider.notifier).navigate(Routes.connecting.path);
     // Spawn the Establishing Connection Dialog
-    ref
-        .read(dialogSpawnerProvider.notifier)
-        .spawn(
-          EstablishingConnectionDialog(
-            statusFuture: statusCompleter.future,
-            onCancel: connectionCanceler.complete,
-          ),
-          barrierDismissable: false,
-        );
+    // ref
+    // .read(dialogSpawnerProvider.notifier)
+    // .spawn(
+    // EstablishingConnectionDialog(
+    // statusFuture: statusCompleter.future,
+    // onCancel: connectionCanceler.complete,
+    // ),
+    // barrierDismissable: false,
+    // );
 
     // Try to Connect
     final url = "ws://${credential.host}:${credential.port}";
@@ -176,7 +179,7 @@ class AddConnectionDialog extends HookWidget {
     final passwordCtl = useTextEditingController();
 
     return Dialog(
-      insetPadding: _dialogInsetPadding(context),
+      insetPadding: dialogInsetPadding(context),
       child: Padding(
         padding: const EdgeInsets.all(35),
         child: Column(
@@ -240,7 +243,7 @@ class EstablishingConnectionDialog extends StatelessWidget {
       builder: (context, snapshot) {
         const maa = MainAxisAlignment.spaceEvenly;
         return Dialog(
-          insetPadding: _dialogInsetPadding(
+          insetPadding: dialogInsetPadding(
             context,
             dialogWidth: 300,
             edgePaddingV: 200,

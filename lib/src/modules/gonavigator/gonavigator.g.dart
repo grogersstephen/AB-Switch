@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'dialoger.dart';
+part of 'gonavigator.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -9,42 +9,42 @@ part of 'dialoger.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(DialogSpawner)
-const dialogSpawnerProvider = DialogSpawnerProvider._();
+@ProviderFor(GoNavigator)
+const goNavigatorProvider = GoNavigatorProvider._();
 
-final class DialogSpawnerProvider
-    extends $StreamNotifierProvider<DialogSpawner, CustomDialog> {
-  const DialogSpawnerProvider._()
+final class GoNavigatorProvider
+    extends $StreamNotifierProvider<GoNavigator, String> {
+  const GoNavigatorProvider._()
       : super(
           from: null,
           argument: null,
           retry: null,
-          name: r'dialogSpawnerProvider',
+          name: r'goNavigatorProvider',
           isAutoDispose: false,
           dependencies: null,
           $allTransitiveDependencies: null,
         );
 
   @override
-  String debugGetCreateSourceHash() => _$dialogSpawnerHash();
+  String debugGetCreateSourceHash() => _$goNavigatorHash();
 
   @$internal
   @override
-  DialogSpawner create() => DialogSpawner();
+  GoNavigator create() => GoNavigator();
 }
 
-String _$dialogSpawnerHash() => r'e11a03cfa12d22c34fcb806297417a8cf75b5b76';
+String _$goNavigatorHash() => r'788956234b1cf275ffd59c3e8bff5bb71d04e1ca';
 
-abstract class _$DialogSpawner extends $StreamNotifier<CustomDialog> {
-  Stream<CustomDialog> build();
+abstract class _$GoNavigator extends $StreamNotifier<String> {
+  Stream<String> build();
   @$mustCallSuper
   @override
   void runBuild() {
     final created = build();
-    final ref = this.ref as $Ref<AsyncValue<CustomDialog>, CustomDialog>;
+    final ref = this.ref as $Ref<AsyncValue<String>, String>;
     final element = ref.element as $ClassProviderElement<
-        AnyNotifier<AsyncValue<CustomDialog>, CustomDialog>,
-        AsyncValue<CustomDialog>,
+        AnyNotifier<AsyncValue<String>, String>,
+        AsyncValue<String>,
         Object?,
         Object?>;
     element.handleValue(ref, created);

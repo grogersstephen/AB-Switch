@@ -3,13 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:obs_production_switcher/src/modules/snackbar/snackbar.dart';
 import 'package:obs_production_switcher/src/modules/dialoger/dialoger.dart';
+import 'package:obs_production_switcher/src/modules/gonavigator/gonavigator.dart';
 import 'package:obs_production_switcher/src/theme.dart';
-import 'package:obs_production_switcher/src/modules/connection/connection.dart';
 import 'package:obs_production_switcher/src/pages/landing.dart';
 import 'package:obs_production_switcher/src/pages/not_found.dart';
+import 'package:obs_production_switcher/src/pages/connecting.dart';
+import 'package:obs_production_switcher/src/pages/reconnecting.dart';
+import 'package:obs_production_switcher/src/pages/connection_lost.dart';
+import 'package:obs_production_switcher/src/pages/connection_select_endpoint.dart';
 
 enum Routes {
-  landing('/');
+  landing('/'),
+  selectEndpoint('/connection/selectEndpoint'),
+  connecting('/connection/connecting'),
+  reconnecting('/connection/reconnecting'),
+  connectionLost('/connection/lost');
 
   const Routes(this.path); // Constructor to associate the path string
   final String path;
@@ -47,6 +55,26 @@ class OBSSwitchApp extends StatelessWidget {
               path: Routes.landing.path,
               builder: (context, state) => const LandingPage(),
             ),
+            GoRoute(
+              name: 'Connecting',
+              path: Routes.connecting.path,
+              builder: (context, state) => const ConnectingPage(),
+            ),
+            GoRoute(
+              name: 'Reconnecting',
+              path: Routes.reconnecting.path,
+              builder: (context, state) => const ReconnectingPage(),
+            ),
+            GoRoute(
+              name: 'Connection Lost',
+              path: Routes.connectionLost.path,
+              builder: (context, state) => const ConnectionLostPage(),
+            ),
+            GoRoute(
+              name: 'Select Endpoint',
+              path: Routes.selectEndpoint.path,
+              builder: (context, state) => const SelectEndpointPage(),
+            ),
           ],
         ),
       ],
@@ -75,16 +103,19 @@ class AppScaffold extends ConsumerWidget {
           actions: [
             IconButton(
               icon: const Icon(Icons.link),
-              onPressed: () => ref
-                  .read(dialogSpawnerProvider.notifier)
-                  .spawn(const SelectEndpointDialog()),
+              onPressed: () => context.go(Routes.selectEndpoint.path),
+              // onPressed: () => ref
+              // .read(dialogSpawnerProvider.notifier)
+              // .spawn(const SelectEndpointDialog()),
             ),
           ],
         ),
         drawer: null,
         body: Padding(
           padding: const EdgeInsets.all(30),
-          child: DialogListener(child: SnackbarListener(child: body)),
+          child: GoNavigatorListener(
+            child: DialogListener(child: SnackbarListener(child: body)),
+          ),
         ),
       ),
     );

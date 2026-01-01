@@ -43,6 +43,7 @@ dependencies:
   riverpod_annotation: ^3.0.3
   flutter_riverpod: ^3.0.3
   go_router: ^17.0.1
+  time: ^2.1.6
 
 dev_dependencies:
   flutter_test:

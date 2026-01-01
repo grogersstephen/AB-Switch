@@ -122,8 +122,9 @@ class Preferences {
     final credentials = WSCredential.listDeepCopy(
       await getWSCredentials().first,
     );
-    if (value.isInList(credentials)) {
-      return;
+    final e = value.equivalentInList(credentials);
+    if (e != null) {
+      credentials.remove(e);
     }
     credentials.add(value);
     setWSCredentials(credentials);
