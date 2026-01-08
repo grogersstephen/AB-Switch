@@ -1,7 +1,12 @@
+import 'dart:ui';
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:obs_websocket/event.dart';
 import 'package:obs_websocket/obs_websocket.dart';
+import 'package:obs_production_switcher/src/modules/gonavigator/gonavigator.dart';
+import 'package:obs_production_switcher/src/modules/client/keep_alive.dart';
+import 'package:obs_production_switcher/src/modules/snackbar/snackbar.dart';
+export 'package:flutter/material.dart' show Colors;
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -10,25 +15,29 @@ part 'client.g.dart';
 @Riverpod(keepAlive: true)
 class ClientP extends _$ClientP {
   @override
-  OBSClient build() => const NoOpClient();
-
-  update(OBSClient value) {
-    state = value;
+  OBSClient build() {
+    return const NoOpClient();
   }
 
-  updateWithFuture(Future<OBSClient> value) async {
-    state = await value;
-  }
-}
+  goNavigate(String path) =>
+      ref.read(goNavigatorProvider.notifier).navigate(path);
 
-@Riverpod(keepAlive: true)
-Stream<VersionResponse> clientKeepAlive(Ref ref) async* {
-  bool active = true;
-  ref.onDispose(() => active = false);
-  while (active) {
-    final client = ref.read(clientPProvider);
-    await Future.delayed(const Duration(seconds: 5));
-    yield await client.getVersion();
+  snackbar(String message, {Color? backgroundColor}) => ref
+      .read(snackbarMsgProvider.notifier)
+      .send(SnackbarMessage(message, backgroundColor: backgroundColor));
+
+  getVersion() => state.getVersion();
+
+  resetToNoOp() {
+    state = const NoOpClient();
+  }
+
+  update(FutureOr<OBSClient> value) async {
+    final result = await value;
+    if (result is Client) {
+      keepAlive();
+    }
+    state = result;
   }
 }
 

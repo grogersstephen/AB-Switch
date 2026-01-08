@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -27,6 +28,8 @@ class DialogSpawner extends _$DialogSpawner {
     );
     ctl.add(data);
   }
+
+  pop() {}
 }
 
 class DialogListener extends ConsumerWidget {
