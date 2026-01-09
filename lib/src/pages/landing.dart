@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:obs_production_switcher/src/widgets/buttons.dart';
+import 'package:obs_production_switcher/src/widgets/t-bar.dart';
 import 'package:obs_production_switcher/src/modules/client/client.dart';
 import 'package:obs_production_switcher/src/widgets/double_bordered_container.dart';
 
@@ -25,7 +26,17 @@ class LandingPage extends HookConsumerWidget {
         Expanded(child: InputsGrid(client)),
         const SizedBox(height: 40),
         studioModeEnabled.data == true
-            ? GoButton(client.triggerStudioModeTransition)
+            ? Row(
+                children: [
+                  GoButton(client.triggerStudioModeTransition),
+                  TBar(
+                    initialValue: 0,
+                    onChanged: (value) {
+                      client.setTBarPosition(value);
+                    },
+                  ),
+                ],
+              )
             : const SizedBox.shrink(),
         Row(
           children: [

@@ -73,6 +73,7 @@ abstract interface class OBSClient {
   setCurrentPreviewScene(String sceneName);
   setCurrentProgramScene(String sceneName);
   setStudioModeEnabled(bool value);
+  setTBarPosition(double value);
 
   triggerStudioModeTransition();
 }
@@ -266,6 +267,19 @@ class Client implements OBSClient {
   setStudioModeEnabled(bool value) => socket.ui.setStudioModeEnabled(value);
 
   @override
+  setTBarPosition(double value, {bool release = true}) {
+    print("setting the tbar position: $value");
+    // socket.send("SetTBarPosition", {"position": value, "release": release});
+	// TODO: fix release maybe? this seems to be doing something, but not working right
+    socket.sendRequest(
+      Request(
+        "SetTBarPosition",
+        requestData: {"position": value, "release": release},
+      ),
+    );
+  }
+
+  @override
   Stream<Map<String, Uint8List>> yieldSceneImages({
     Duration period = const Duration(milliseconds: 1000),
     int maxFailures = 10,
@@ -435,6 +449,11 @@ class NoOpClient implements OBSClient {
 
   @override
   setStudioModeEnabled(bool value) {
+    throw UnimplementedError();
+  }
+
+  @override
+  setTBarPosition(double value) {
     throw UnimplementedError();
   }
 
